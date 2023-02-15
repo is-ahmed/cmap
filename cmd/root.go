@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-
-
+var (
+    RootCmd = &cobra.Command{
+	 Use: "Command Map",
+	 Short: "Map for common commands you use but not often enough to commit to memory",
+    }
+)
 
 
 
