@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	cmd "github.com/is-ahmed/command-map/cmd"
+	"github.com/is-ahmed/command-map/cmd"
 )
 
 

@@ -1,51 +1,67 @@
 package tui
 
-
 import (
 	"fmt"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type model struct {
-	input string
+type (
+	errMsg error
+)
 
+type Model struct {
+	textInput textinput.Model
+	err error	
 }
 
-type Model int
+func InitialModel() Model {
+	ti := textinput.New()
+	ti.Placeholder = ""
+	ti.Focus()
+	ti.CharLimit = 156
+	ti.Width = 20
+
+	return Model{
+		textInput: ti,
+		err:       nil,
+	}	
+}
+
 
 type TickMsg time.Time
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(tick(), tea.EnterAltScreen)
+	return textinput.Blink
 }
 
-func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc", "ctrl+c":
+		switch msg.Type {
+		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		}
 
-	case TickMsg:
-		m--
-		if m <= 0 {
-			return m, tea.Quit
-		}
-		return m, tick()
+	// We handle errors just like any other message
+	case errMsg:
+		m.err = msg
+		return m, nil
 	}
 
-	return m, nil
+	m.textInput, cmd = m.textInput.Update(msg)
+	return m, cmd	
 }
 
 func (m Model) View() string {
-	return fmt.Sprintf("\n\n     Hi. This program will exit in %d seconds...", m)
+	return fmt.Sprintf(
+		"Search by command\n\n%s\n\n%s",
+		m.textInput.View(),
+		"",
+	) + "\n"
 }
 
-func tick() tea.Cmd {
-	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
-		return TickMsg(t)
-	})
-}

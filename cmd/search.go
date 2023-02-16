@@ -12,7 +12,7 @@ var (
 		Short: "Search for a command by the description",
 		Run: func(cmd *cobra.Command, args []string){
 
-			p := tea.NewProgram(tui.Model(5), tea.WithAltScreen())
+			p := tea.NewProgram(tui.InitialModel(), tea.WithAltScreen())
 			if _, err := p.Run(); err != nil {
 				log.Fatal(err)
 			}

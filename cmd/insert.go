@@ -1,7 +1,7 @@
 package cmd
 import (
 	"github.com/spf13/cobra"
-	types "github.com/is-ahmed/command-map/types"
+	"github.com/is-ahmed/command-map/types"
 )
 
 
