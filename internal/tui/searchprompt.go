@@ -2,14 +2,16 @@ package tui
 
 import (
 	"fmt"
-	"time"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/is-ahmed/command-map/types"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 type (
@@ -90,7 +92,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmds []tea.Cmd
-	m.viewport.SetContent(m.textInput.Value())
+	var searchResults string = getSearchResults(m.textInput.Value())
+	m.viewport.SetContent(searchResults)
 	// Handle keyboard and mouse events in the viewport
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -118,18 +121,27 @@ func max(a, b int) int {
 	return b
 }
 
-func updateSearchResults(command string) {
+
+func getSearchResults(command string) string {
 	var commandList []types.Command = types.GetCommands().Commands
-	var commandStrings []string 
 
-	for i:=0; i < len(commandList); i++ {
-		commandStrings = append(commandStrings, commandList[i].Command)
-	}
+	sort.Slice(commandList, func(i, j int) bool {
+		return -1 * fuzzy.RankMatch(command, commandList[i].Command) <  -1 * fuzzy.RankMatch(command, commandList[j].Command)
+	})
 
-
-
+	return formatSearchResults(commandList)
 
 }
+
+func formatSearchResults(results []types.Command) string {
+	var output string = ""
+	for i:=0; i < len(results); i++ {
+		output += results[i].Command + " : " + results[i].Description + "\n"
+	}
+	return output
+}
+
+
 
 func (m Model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s", m.textInput.View(), m.headerView(), m.viewport.View())
