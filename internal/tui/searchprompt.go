@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -11,7 +10,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/is-ahmed/command-map/types"
-	"github.com/lithammer/fuzzysearch/fuzzy"
+
+	"github.com/sahilm/fuzzy"
 )
 
 type (
@@ -121,25 +121,40 @@ func max(a, b int) int {
 	return b
 }
 
-
+func contains(needle int, haystack []int) bool {
+	for _, i := range haystack {
+		if needle == i {
+			return true
+		}
+	}
+	return false
+}
 func getSearchResults(command string) string {
 	var commandList []types.Command = types.GetCommands().Commands
 
-	sort.Slice(commandList, func(i, j int) bool {
-		return -1 * fuzzy.RankMatch(command, commandList[i].Command) <  -1 * fuzzy.RankMatch(command, commandList[j].Command)
-	})
+	var data []string
 
-	return formatSearchResults(commandList)
-
-}
-
-func formatSearchResults(results []types.Command) string {
-	var output string = ""
-	for i:=0; i < len(results); i++ {
-		output += results[i].Command + " : " + results[i].Description + "\n"
+	for i := 0; i < len(commandList); i++ {
+		data = append(data, commandList[i].Command + " : " + commandList[i].Description)
 	}
-	return output
+
+	matches := fuzzy.Find(command, data)
+	var results string = ""
+	for _, match := range matches {
+		for i := 0; i < len(match.Str); i++ {
+			if contains(i, match.MatchedIndexes) {
+				results += fmt.Sprintf("\033[1m%s\033[0m", string(match.Str[i]))
+			} else {
+				results += fmt.Sprintf(string(match.Str[i]))
+			}
+		}
+		results += fmt.Sprintln("")
+	}
+
+	return results
+
 }
+
 
 
 
