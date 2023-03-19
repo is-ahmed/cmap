@@ -1,7 +1,13 @@
 package cmd
+
 import (
-	"github.com/spf13/cobra"
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/is-ahmed/command-map/types"
+	"github.com/spf13/cobra"
 )
 
 
@@ -11,9 +17,16 @@ var (
 		Short: "Create a new command to insert into the map",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			var command string = args[0]
-			var description string = args[1]
-			
+			reader := bufio.NewReader(os.Stdin)
+
+			fmt.Print("Pass a command: ")
+			command, _ := reader.ReadString('\n')
+
+			command = strings.TrimSpace(command)
+
+			fmt.Print("Pass a description: ")
+			description, _ := reader.ReadString('\n')
+		
 			var c types.Command
 			c.Command = command
 			c.Description = description
