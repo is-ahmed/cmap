@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/is-ahmed/command-map/types"
-
+	"github.com/is-ahmed/cmap/types"
+	"github.com/atotto/clipboard"
 	"github.com/sahilm/fuzzy"
 )
 
