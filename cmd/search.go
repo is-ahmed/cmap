@@ -4,7 +4,7 @@ import (
 	"log"
 	"github.com/spf13/cobra"
 	tea "github.com/charmbracelet/bubbletea"
-	tui "github.com/is-ahmed/command-map/internal/tui"
+	tui "github.com/is-ahmed/cmap/internal/tui"
 )
 var (
 	SearchCmd = &cobra.Command {

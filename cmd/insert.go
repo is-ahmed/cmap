@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/is-ahmed/command-map/types"
+	"github.com/is-ahmed/cmap/types"
 	"github.com/spf13/cobra"
 )
 

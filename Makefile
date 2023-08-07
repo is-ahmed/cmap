@@ -1,10 +1,10 @@
 build:
-	go build -o bin/command-map .
+	go build -o bin/cmap .
 
 rpm: build
 	fpm -s dir -t rpm \
 	-p cmap-0.1.0-1-any.rpm \
-	--name command-map \
+	--name cmap \
 	--license mit \
 	--version 0.1.0 \
 	--architecture all \
@@ -12,12 +12,12 @@ rpm: build
 	--description "Simple way to bookmark commands" \
 	--url "" \
 	--maintainer "isahmed0149@gmail.com" \
-	command-map=./bin/command-map
+	cmap=./bin/cmap
 
 deb: build
 	fpm -s dir -t deb \
 	-p cmap-0.1.0-1-any.deb \
-	--name command-map \
+	--name cmap \
 	--license mit \
 	--version 0.1.0 \
 	--architecture all \
@@ -25,7 +25,7 @@ deb: build
 	--description "Simple way to bookmark commands" \
 	--url "" \
 	--maintainer "isahmed0149@gmail.com" \
-	command-map=./bin/command-map
+	cmap=./bin/cmap
 
 install:
 	go install
