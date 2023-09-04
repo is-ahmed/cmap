@@ -112,23 +112,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = msg
 		return m, nil
 	
-//	case tea.WindowSizeMsg:
-//		headerHeight := lipgloss.Height(m.headerView())
-//		footerHeight := lipgloss.Height(m.footerView())
-//		verticalMarginHeight := headerHeight + footerHeight
-//
-//		if !m.ready {
-//			// Since this program is using the full size of the viewport we
-//			// need to wait until we've received the window dimensions before
-//			// we can initialize the viewport. The initial dimensions come in
-//			// quickly, though asynchronously, which is why we wait for them
-//			// here.
-//			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
-//			m.ready = true
-//		} else {
-//			m.viewport.Width = msg.Width
-//			m.viewport.Height = msg.Height - verticalMarginHeight
-//		}
+	case tea.WindowSizeMsg:
+		headerHeight := lipgloss.Height(m.headerView())
+		footerHeight := lipgloss.Height(baseStyle.Render(m.table.View()))
+		verticalMarginHeight := headerHeight + footerHeight
+
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+			m.ready = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - verticalMarginHeight
+		}
 
 	}
 
@@ -142,15 +142,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.textInput, cmd = m.textInput.Update(msg)
 	cmds = append(cmds, cmd)
-
-	m.viewport.SetContent("sample")
+	
+	var desc string
+	if len(m.table.Rows()) == 0  || m.table.Cursor() == -1 || m.table.Cursor() >= len(m.table.Rows()){
+		desc = ""
+	} else {
+		desc = m.table.SelectedRow()[1]
+	}
+	m.viewport.SetContent(desc)
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 
 }
 func (m Model) headerView() string {
-	title := titleStyle.Render("Results")
+	title := titleStyle.Render("Description")
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
@@ -208,6 +214,18 @@ func getSearchResults(command string) []table.Row {
 
 
 func (m Model) View() string {
-	return fmt.Sprintf("\n%s\n\n%s", m.textInput.View(), baseStyle.Render(m.table.View()))
+	return lipgloss.JoinVertical(lipgloss.Top, 
+		m.textInput.View(), 
+		lipgloss.JoinHorizontal(
+			lipgloss.Left, 
+			baseStyle.Render(m.table.View()), 
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				m.headerView(),
+				m.viewport.View(),
+				m.footerView(),
+			),
+		),
+	)
 }
 
