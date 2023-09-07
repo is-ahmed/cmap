@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,11 +29,16 @@ var (
 		b := lipgloss.RoundedBorder()
 		b.Left = "┤"
 		return titleStyle.Copy().BorderStyle(b)
-	}()
+	}()	
+
+	baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
 )
 type Model struct {
 	textInput textinput.Model
 	viewport viewport.Model
+	table table.Model
 	ready bool
 	err error	
 }
@@ -41,8 +48,36 @@ func InitialModel() Model {
 	ti.Placeholder = ""
 	ti.Focus()
 
+	columns := []table.Column{
+		{Title: "Command", Width: 20},
+		{Title: "Description", Width: 20},
+	}
+
+	rows := []table.Row{}
+
+	tb := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(20),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	tb.SetStyles(s)
+
+	
 	return Model{
 		textInput: ti,
+		table: tb,
 		err:       nil,
 		ready: false,
 	}	
@@ -51,18 +86,25 @@ func InitialModel() Model {
 
 type TickMsg time.Time
 
-func (m Model) Init() tea.Cmd {
-	return nil
-}
+func (m Model) Init() tea.Cmd { return nil }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
+		switch msg.String() {
+		case "esc":
+			if m.table.Focused() {
+				m.table.Blur()
+			} else {
+				m.table.Focus()
+			}
+		case "ctrl+c":
 			return m, tea.Quit
+		case "enter":
+			var command string = m.table.SelectedRow()[0]
+			clipboard.WriteAll(command)
 		}
 
 	// We handle errors just like any other message
@@ -72,7 +114,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	
 	case tea.WindowSizeMsg:
 		headerHeight := lipgloss.Height(m.headerView())
-		footerHeight := lipgloss.Height(m.footerView())
+		footerHeight := lipgloss.Height(baseStyle.Render(m.table.View()))
 		verticalMarginHeight := headerHeight + footerHeight
 
 		if !m.ready {
@@ -91,18 +133,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmds []tea.Cmd
-	var searchResults string = getSearchResults(m.textInput.Value())
-	m.viewport.SetContent(searchResults)
-	// Handle keyboard and mouse events in the viewport
-	m.viewport, cmd = m.viewport.Update(msg)
+
+	var searchResults []table.Row = getSearchResults(m.textInput.Value());
+	m.table.SetRows(searchResults)
+
+	m.table, cmd = m.table.Update(msg)
 	cmds = append(cmds, cmd)
+
 	m.textInput, cmd = m.textInput.Update(msg)
+	cmds = append(cmds, cmd)
+	
+	var desc string
+	if len(m.table.Rows()) == 0  || m.table.Cursor() == -1 || m.table.Cursor() >= len(m.table.Rows()){
+		desc = ""
+	} else {
+		desc = m.table.SelectedRow()[1]
+	}
+	m.viewport.SetContent(desc)
+	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 
 }
 func (m Model) headerView() string {
-	title := titleStyle.Render("Results")
+	title := titleStyle.Render("Description")
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
@@ -128,7 +182,16 @@ func contains(needle int, haystack []int) bool {
 	}
 	return false
 }
-func getSearchResults(command string) string {
+
+
+func getSearchResults(command string) []table.Row {
+	/*
+		Give a new list of results corresponding to the rows of the table
+		Each member is of type table.Row
+	*/
+	var results []table.Row
+
+
 	var commandList []types.Command = types.GetCommands().Commands
 
 	var data []string
@@ -138,16 +201,9 @@ func getSearchResults(command string) string {
 	}
 
 	matches := fuzzy.Find(command, data)
-	var results string = ""
 	for _, match := range matches {
-		for i := 0; i < len(match.Str); i++ {
-			if contains(i, match.MatchedIndexes) {
-				results += fmt.Sprintf("\033[1m%s\033[0m", string(match.Str[i]))
-			} else {
-				results += fmt.Sprintf(string(match.Str[i]))
-			}
-		}
-		results += fmt.Sprintln("")
+		command, desc := strings.Split(match.Str, " : ")[0], strings.Split(match.Str, " : ")[1]
+		results = append(results, table.Row{command, desc})
 	}
 
 	return results
@@ -158,6 +214,18 @@ func getSearchResults(command string) string {
 
 
 func (m Model) View() string {
-	return fmt.Sprintf("%s\n%s\n%s", m.textInput.View(), m.headerView(), m.viewport.View())
+	return lipgloss.JoinVertical(lipgloss.Top, 
+		m.textInput.View(), 
+		lipgloss.JoinHorizontal(
+			lipgloss.Left, 
+			baseStyle.Render(m.table.View()), 
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				m.headerView(),
+				m.viewport.View(),
+				m.footerView(),
+			),
+		),
+	)
 }
 
