@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"os/user"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +12,9 @@ var (
 		Use: "init",
 		Short: "Intialize the mapping",
 		Run: func(cmd *cobra.Command, args []string) {
-			mapFile, err := os.Create("/home/isahmed/.commandmap")
+			user, err := user.Current()	
+			filePath := user.HomeDir + "/.commandmap"
+			mapFile, err := os.Create(filePath)
 			if err != nil {
 				log.Fatal(err)
 			}

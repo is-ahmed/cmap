@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"encoding/json"
 )
 type Commands struct {
@@ -17,7 +18,8 @@ type Command struct {
 
 func GetCommands() Commands {
 	var commandList Commands
-	commandMap, err := os.Open("/home/isahmed/.commandmap")
+	user, err := user.Current()	
+	commandMap, err := os.Open(user.HomeDir + "/.commandmap")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +30,8 @@ func GetCommands() Commands {
 
 func WriteCommands(commandList Commands) {
     byteValue, _ := json.MarshalIndent(commandList, "", " ")
-	_ = ioutil.WriteFile("/home/isahmed/.commandmap", byteValue, 0644)
+	user, _ := user.Current()
+	_ = ioutil.WriteFile(user.HomeDir + "/.commandmap", byteValue, 0644)
 }
 
 func (c Command) Print() {
