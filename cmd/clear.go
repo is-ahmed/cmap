@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
-	"github.com/spf13/cobra"
 	"os"
 	"os/user"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -16,6 +18,8 @@ var (
 			filePath := user.HomeDir + "/.commandmap"
 			if err := os.Truncate(filePath, 0); err != nil {
 				log.Fatal("Failed to clear ~/.commandmap")
+			} else {
+				fmt.Println("All commands have been cleared")
 			}
 		},
 	}

@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/user"
+
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +20,7 @@ var (
 			if err != nil {
 				log.Fatal(err)
 			}
+			fmt.Println(filePath + "has been created")
 			mapFile.Close()
 		},
 	}
