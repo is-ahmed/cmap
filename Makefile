@@ -28,7 +28,7 @@ deb: build
 	cmap=./bin/cmap
 
 install:
-	go install
+	GOBIN=/usr/local/bin/ go install
 
 
 
